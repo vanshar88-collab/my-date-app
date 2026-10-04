@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Приглашение на свидание</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    :root {
+      --bg-color: #fff5f7;
+      --card-bg: #ffffff;
+      --primary: #ff4b72;
+      --primary-hover: #e03e61;
+      --text: #2c2c2c;
+      --text-muted: #666;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: 20px;
+      padding: 28px 20px;
+      width: 100%;
+      max-width: 380px;
+      box-shadow: 0 10px 25px rgba(255, 75, 114, 0.15);
+      text-align: center;
+      position: relative;
+    }
+
+    h1 {
+      font-size: 22px;
+      margin-bottom: 12px;
+      color: var(--text);
+    }
+
+    p {
+      font-size: 15px;
+      color: var(--text-muted);
+      margin-bottom: 24px;
+      line-height: 1.4;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+    }
+
+    button {
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.2s, transform 0.1s;
+      width: 100%;
+    }
+
+    button:active {
+      transform: scale(0.98);
+    }
+
+    .btn-secondary {
+      background-color: #f0f0f0;
+      color: var(--text);
+    }
+
+    .screen {
+      display: none;
+    }
+
+    .screen.active {
+      display: block;
+    }
+
+    .error-toast {
+      background-color: #ffe0e6;
+      color: var(--primary);
+      padding: 10px;
+      border-radius: 10px;
+      font-size: 14px;
+      margin-bottom: 16px;
+      font-weight: 600;
+      animation: shake 0.3s ease-in-out;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-6px); }
+      75% { transform: translateX(6px); }
+    }
+
+    .form-group {
+      text-align: left;
+      margin-bottom: 16px;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: var(--text-muted);
+    }
+
+    input[type="date"],
+    select,
+    textarea {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      font-size: 15px;
+      outline: none;
+      background: #fafafa;
+    }
+
+    textarea {
+      resize: none;
+      height: 80px;
+    }
+
+    .love-card {
+      background: #fff0f3;
+      border: 1px dashed var(--primary);
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 20px;
+      font-style: italic;
+      color: #b82e4c;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    
+    <!-- Экран 1: Вопрос -->
+    <div id="screen-question" class="screen active">
+      <div id="error-msg" class="error-toast" style="display: none;">
+        Такого варианта нету! 😉
+      </div>
+      <h1>Пойдешь со мной на свидание? ✨</h1>
+      <p>Я очень хочу провести с тобой время!</p>
+      <div class="btn-group">
+        <button onclick="goToSetup()">Да! ❤️</button>
+        <button class="btn-secondary" onclick="showError()">Нет</button>
+      </div>
+    </div>
+
+    <!-- Экран 2: Настройка свидания -->
+    <div id="screen-setup" class="screen">
+      <h1>Ура! 🎉</h1>
+      
+      <!-- Открыточка с признанием -->
+      <div class="love-card">
+        «Я безумно люблю тебя и дорожу каждым мгновением, проведенным вместе. Ты делаешь меня самым счастливым человек на свете!» 💕
+      </div>
+
+      <div class="form-group">
+        <label for="date-select">Выбери удобную дату:</label>
+        <input type="date" id="date-select">
+      </div>
+
+      <div class="form-group">
+        <label for="place-select">Чем займемся?</label>
+        <select id="place-select" onchange="toggleCustomOption(this.value)">
+          <option value="Уютный ресторан">Романтический ужин в ресторане</option>
+          <option value="Прогулка и кофе">Прогулка по городу с кофе</option>
+          <option value="Поход в кино">Поход в кино на классный фильм</option>
+          <option value="custom">Написать свой вариант...</option>
+        </select>
+      </div>
+
+      <div class="form-group" id="custom-input-group" style="display: none;">
+        <label for="custom-place">Твой вариант:</label>
+        <textarea id="custom-place" placeholder="Напиши, куда бы тебе хотелось сходить..."></textarea>
+      </div>
+
+      <button onclick="sendData()">Отправить ❤️</button>
+    </div>
+
+    <!-- Экран 3: Финал -->
+    <div id="screen-thanks" class="screen">
+      <h1>Договорились! 🥰</h1>
+      <p>Я уже жду нашей встречи!</p>
+    </div>
+
+  </div>
+
+  <script>
+    const tg = window.Telegram.WebApp;
+    tg.expand();
+
+    // Установка минимальной даты — сегодня
+    const dateInput = document.getElementById('date-select');
+    const today = new Date().toISOString().split('T')[0];
+    dateInput.min = today;
+    dateInput.value = today;
+
+    function showError() {
+      const errorMsg = document.getElementById('error-msg');
+      errorMsg.style.display = 'block';
+      // Перезапуск анимации при повторном клике
+      errorMsg.style.animation = 'none';
+      errorMsg.offsetHeight; 
+      errorMsg.style.animation = null;
+    }
+
+    function goToSetup() {
+      document.getElementById('screen-question').classList.remove('active');
+      document.getElementById('screen-setup').classList.add('active');
+    }
+
+    function toggleCustomOption(value) {
+      const customGroup = document.getElementById('custom-input-group');
+      if (value === 'custom') {
+        customGroup.style.display = 'block';
+      } else {
+        customGroup.style.display = 'none';
+      }
+    }
+
+    function sendData() {
+      const selectedDate = document.getElementById('date-select').value;
+      const placeSelect = document.getElementById('place-select').value;
+      let finalPlace = placeSelect;
+
+      if (placeSelect === 'custom') {
+        finalPlace = document.getElementById('custom-place').value || 'Свой вариант (не указано)';
+      }
+
+      const result = {
+        date: selectedDate,
+        option: finalPlace
+      };
+
+      // Передаем данные обратно боту и закрываем мини-приложение
+      if (tg.sendData) {
+        tg.sendData(JSON.stringify(result));
+      } else {
+        document.getElementById('screen-setup').classList.remove('active');
+        document.getElementById('screen-thanks').classList.add('active');
+      }
+    }
+  </script>
+</body>
+</html>
